@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeytinyağı İmparatorluğu</title>
+    <style>
+        :root {
+            --primary: #6b8c21;
+            --secondary: #f4f1ea;
+            --accent: #d4a017;
+            --danger: #c0392b;
+            --text: #2c3e50;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--secondary);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        h1 { color: var(--primary); margin: 0; }
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            background: #eef5e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--primary);
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--primary);
+        }
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .game-area { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button:hover { background-color: #55701a; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        button.sell-btn { background-color: var(--accent); color: #333; }
+        button.sell-btn:hover { background-color: #bfa015; }
+        
+        .log-area {
+            grid-column: 1 / -1;
+            background: #333;
+            color: #0f0;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #444; }
+        .bad-event { color: #ff6b6b; }
+        .good-event { color: #51cf66; }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: var(--primary);
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🫒 Zeytinyağı İmparatorluğu</h1>
+        <p>Hedef: 1.000.000 TL Para ve 100 Marka Puanı</p>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat-item">Tarih: <span id="dateDisplay" class="stat-value">Ocak, Yıl 1</span></div>
+        <div class="stat-item">Para: <span id="moneyDisplay" class="stat-value">5000</span> TL</div>
+        <div class="stat-item">Marka Puanı: <span id="brandDisplay" class="stat-value">0</span></div>
+        <div class="stat-item">Piyasa Fiyatı: <span id="priceDisplay" class="stat-value">0</span> TL/Lt</div>
+        <div class="stat-item">Hava Durumu: <span id="weatherDisplay" class="stat-value">Güneşli</span></div>
+    </div>
+
+    <div class="game-area">
+        <!-- Üretim Paneli -->
+        <div class="panel">
+            <h3>🚜 Üretim & Tesis</h3>
+            <div class="stat-item">Ağaç Sayısı: <span id="treesDisplay">10</span> (Verim: <span id="yieldDisplay">0</span> kg)</div>
+            <div class="stat-item">İşçiler: <span id="workersDisplay">1</span> / <span id="maxWorkersDisplay">5</span></div>
+            <div class="stat-item">Sıkma Makinesi: <span id="machineDisplay">Kapasite 50L</span></div>
+            <div class="stat-item">Depo: <span id="storageDisplay">0</span> / <span id="maxStorageDisplay">200</span> Lt</div>
+            
+            <hr>
+            <button onclick="buyTree()">Zeytin Ağacı Al (500 TL)</button>
+            <button onclick="hireWorker()">İşçi Kirala (200 TL + Maaş)</button>
+            <button onclick="upgradeMachine()">Makineyi Yükselt (2000 TL)</button>
+            <button onclick="expandStorage()">Depoyu Genişlet (1000 TL)</button>
+            <button onclick="nextMonth()" style="background-color: #2c3e50; margin-top: 15px; font-weight:bold;">▶ SONRAKİ AY</button>
+        </div>
+
+        <!-- İşlemler Paneli -->
+        <div class="panel">
+            <h3>🏭 İşleme & Satış</h3>
+            <div style="margin-bottom: 15px;">
+                <strong>Stoktaki Zeytin:</strong> <span id="oliveStockDisplay">0</span> kg
+                <div class="progress-container"><div id="oliveProgress" class="progress-bar"></div></div>
+                <button onclick="harvestOlives()" id="harvestBtn" disabled>Hasat Yap (Mevsim: Kasım-Ocak)</button>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>Sıkılacak Zeytin:</strong> <span id="crushStockDisplay">0</span> kg
+                <div class="progress-container"><div id="crushProgress" class="progress-bar"></div></div>
+                <button onclick="crushOlives()">Zeytinyağı Sık</button>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <strong>Bitmiş Yağ:</strong> <span id="oilStockDisplay">0</span> Lt
+                <div class="progress-container"><div id="oilProgress" class="progress-bar"></div></div>
+                <button class="sell-btn" onclick="sellOil()">Yağı Sat (Piyasa Fiyatından)</button>
+                <button class="sell-btn" onclick="sellPremium()" style="background-color: #8e44ad; color:white;">Özel Paketle Sat (+%20 Fiyat, -5 Marka Riski)</button>
+            </div>
+            
+            <div style="font-size: 0.9em; color: #666;">
+                <p><em>Kalite İpucu: Hava durumu iyiyseniz ve makineniz yeniyse kalite artar.</em></p>
+                <p>Mevcut Kalite Puanı: <span id="qualityDisplay">50</span>/100</p>
+            </div>
+        </div>
+
+        <!-- Log Paneli -->
+        <div class="log-area" id="gameLog">
+            <div class="log-entry">Oyuna hoş geldiniz! İlk hasat için Kasım ayını bekleyin.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Oyun Durumu
+    let state = {
+        month: 0, // 0 = Ocak
+        year: 1,
+        money: 5000,
+        brandScore: 10,
+        
+        // Varlıklar
+        trees: 10,
+        workers: 1,
+        machineLevel: 1, // Kapasite ve verim
+        storageCapacity: 200,
+        
+        // Stoklar
+        oliveStock: 0, // Kg
+        oilStock: 0,   // Litre
+        
+        // Ekonomi & Çevre
+        marketPrice: 150,
+        weather: 'Güneşli',
+        quality: 50, // 0-100 arası
+        
+        // Geçici işleme stokları
+        pendingCrush: 0
+    };
+
+    const WEATHER_TYPES = ['Güneşli', 'Bulutlu', 'Yağmurlu', 'Fırtına', 'Kuraklık'];
+    const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+    function log(msg, type = 'normal') {
+        const logEl = document.getElementById('gameLog');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        if (type === 'bad') entry.classList.add('bad-event');
+        if (type === 'good') entry.classList.add('good-event');
+        entry.innerText = `[${MONTHS[state.month]} ${state.year}] ${msg}`;
+        logEl.prepend(entry);
+    }
+
+    function updateUI() {
+        document.getElementById('dateDisplay').innerText = `${MONTHS[state.month]}, Yıl ${state.year}`;
+        document.getElementById('moneyDisplay').innerText = state.money.toLocaleString();
+        document.getElementById('brandDisplay').innerText = state.brandScore;
+        document.getElementById('priceDisplay').innerText = state.marketPrice;
+        document.getElementById('weatherDisplay').innerText = state.weather;
+        
+        document.getElementById('treesDisplay').innerText = state.trees;
+        document.getElementById('yieldDisplay').innerText = Math.floor(state.trees * (state.quality/100) * 2); // Basit verim formülü
+        document.getElementById('workersDisplay').innerText = state.workers;
+        document.getElementById('maxWorkersDisplay').innerText = state.trees; // 1 işçi 10 ağaca bakar basit mantık
+        document.getElementById('machineDisplay').innerText = `Seviye ${state.machineLevel} (Kapasite: ${state.machineLevel * 100}kg)`;
+        document.getElementById('storageDisplay').innerText = state.oilStock;
+        document.getElementById('maxStorageDisplay').innerText = state.storageCapacity;
+
+        document.getElementById('oliveStockDisplay').innerText = state.oliveStock;
+        document.getElementById('crushStockDisplay').innerText = state.pendingCrush;
+        document.getElementById('oilStockDisplay').innerText = state.oilStock;
+        document.getElementById('qualityDisplay').innerText = Math.floor(state.quality);
+
+        // Progress bars
+        document.getElementById('oliveProgress').style.width = `${Math.min(100, (state.oliveStock / (state.trees * 5)) * 100)}%`;
+        document.getElementById('crushProgress').style.width = `${Math.min(100, (state.pendingCrush / (state.machineLevel * 100)) * 100)}%`;
+        document.getElementById('oilProgress').style.width = `${Math.min(100, (state.oilStock / state.storageCapacity) * 100)}%`;
+
+        // Hasat butonu kontrolü
+        const harvestBtn = document.getElementById('harvestBtn');
+        if (state.month === 10 || state.month === 11 || state.month === 0) { // Kasım, Aralık, Ocak
+            harvestBtn.disabled = false;
+            harvestBtn.innerText = "Hasat Yap (Mevsimi)";
+        } else {
+            harvestBtn.disabled = true;
+            harvestBtn.innerText = "Hasat Zamanı Değil";
+        }
+
+        checkWinCondition();
+    }
+
+    function buyTree() {
+        if (state.money >= 500) {
+            state.money -= 500;
+            state.trees++;
+            log("Yeni bir zeytin ağacı dikildi.");
+            updateUI();
+        } else {
+            log("Yetersiz bakiye!", "bad");
+        }
+    }
+
+    function hireWorker() {
+        if (state.money >= 200) {
+            state.money -= 200;
+            state.workers++;
+            log("Yeni işçi işe alındı.");
+            updateUI();
+        } else {
+            log("Yetersiz bakiye!", "bad");
+        }
+    }
+
+    function upgradeMachine() {
+        const cost = state.machineLevel * 2000;
+        if (state.money >= cost) {
+            state.money -= cost;
+            state.machineLevel++;
+            log(`Makine seviyesi ${state.machineLevel}'e yükseltildi.`, "good");
+            updateUI();
+        } else {
+            log("Yetersiz bakiye!", "bad");
+        }
+    }
+
+    function expandStorage() {
+        if (state.money >= 1000) {
+            state.money -= 1000;
+            state.storageCapacity += 200;
+            log("Depo alanı genişletildi.", "good");
+            updateUI();
+        } else {
+            log("Yetersiz bakiye!", "bad");
+        }
+    }
+
+    function harvestOlives() {
+        if (state.oliveStock > 0) {
+            log("Depoda henüz sıkılmamış zeytin var, önce onları işleyin.", "bad");
+            return;
+        }
+
+        // Verim hesaplama: Ağaç sayısı * Kalite faktörü * İşçi verimliliği
+        let yieldPerTree = 2 + (state.quality / 50); 
+        let totalHarvest = Math.floor(state.trees * yieldPerTree);
+        
+        // İşçi eksikliği cezası
+        if (state.workers < state.trees / 10) {
+            totalHarvest = Math.floor(totalHarvest * 0.7);
+            log("Yetersiz işçi nedeniyle hasat verimi düştü!", "bad");
+        }
+
+        state.oliveStock = totalHarvest;
+        log(`${totalHarvest} kg zeytin hasat edildi.`);
+        updateUI();
+    }
+
+    function crushOlives() {
+        if (state.oliveStock <= 0) {
+            log("Sıkılacak zeytin yok!", "bad");
+            return;
+        }
+
+        const capacity = state.machineLevel * 100;
+        const amountToCrush = Math.min(state.oliveStock, capacity);
+        
+        state.oliveStock -= amountToCrush;
+        state.pendingCrush += amountToCrush; // Aslında direkt yağa çevirebiliriz ama görsel akış için ara adım
+        
+        // Sıkma verimi (%20 yağ oranı varsayalım, kaliteye göre değişir)
+        let oilYield = amountToCrush * 0.20;
+        if (state.quality > 80) oilYield *= 1.1; // Yüksek kalite daha çok yağ
+        
+        const producedOil = Math.floor(oilYield);
+
+        if (state.oilStock + producedOil > state.storageCapacity) {
+            log("Depo dolu! Yağ döküldü.", "bad");
+            producedOil = 0; // Veya taşan kısmı sil
+        } else {
+            state.oilStock += producedOil;
+            log(`${amountToCrush} kg zeytin sıkıldı, ${producedOil} Lt yağ elde edildi.`);
+        }
+        
+        updateUI();
+    }
+
+    function sellOil() {
+        if (state.oilStock <= 0) {
+            log("Satılacak yağ yok!", "bad");
+            return;
+        }
+
+        const revenue = state.oilStock * state.marketPrice;
+        state.money += revenue;
+        
+        // Marka puanı etkisi (Standart satış az puan kazandırır)
+        state.brandScore += Math.floor(state.oilStock / 10);
+        
+        log(`${state.oilStock} Lt yağ satıldı. Kazanç: ${revenue} TL`);
+        state.oilStock = 0;
+        updateUI();
+    }
+
+    function sellPremium() {
+        if (state.oilStock <= 0) {
+            log("Satılacak yağ yok!", "bad");
+            return;
+        }
+
+        if (state.quality < 70) {
+            log("Kaliteniz özel paketleme için yeterli değil! Müşteriler şikayet edebilir.", "bad");
+            // Riskli satış
+            if (Math.random() > 0.5) {
+                state.brandScore -= 10;
+                log("Özel paketleme başarısız oldu, marka puanı düştü!", "bad");
+                return;
+            }
+        }
+
+        const premiumPrice = state.marketPrice * 1.2;
+        const revenue = state.oilStock * premiumPrice;
+        state.money += revenue;
+        state.brandScore += Math.floor(state.oilStock / 5); // Daha fazla marka puanı
+        
+        log(`${state.oilStock} Lt özel paket yağ satıldı. Kazanç: ${Math.floor(revenue)} TL`, "good");
+        state.oilStock = 0;
+        updateUI();
+    }
+
+    function nextMonth() {
+        // 1. Ayı ilerlet
+        state.month++;
+        if (state.month > 11) {
+            state.month = 0;
+            state.year++;
+            log("--- YIL ATLANDI ---", "good");
+        }
+
+        // 2. Hava Durumu ve Piyasa Güncelleme
+        const weatherIndex = Math.floor(Math.random() * WEATHER_TYPES.length);
+        state.weather = WEATHER_TYPES[weatherIndex];
+        
+        // Piyasa fiyatı dalgalanması (Arz talep simülasyonu basit)
+        let priceChange = (Math.random() * 20) - 10; // -10 ile +10 arası
+        if (state.weather === 'Kuraklık') priceChange += 15; // Az arz, yüksek fiyat
+        if (state.weather === 'Fırtına') priceChange -= 10; // Kalite düşüşü korkusu
+        
+        state.marketPrice = Math.max(50, Math.floor(state.marketPrice + priceChange));
+
+        // 3. Kalite Etkilenmesi
+        if (state.weather === 'Güneşli') state.quality = Math.min(100, state.quality + 2);
+        if (state.weather === 'Kuraklık') state.quality = Math.max(10, state.quality - 5);
+        if (state.weather === 'Fırtına') state.quality = Math.max(10, state.quality - 10);
+
+        // 4. Giderler (İşçi maaşı vb.)
+        const wages = state.workers * 100;
+        if (state.money >= wages) {
+            state.money -= wages;
+            // log(`İşçi maaşları ödendi: -${wages} TL`);
+        } else {
+            state.money = 0;
+            state.workers = Math.floor(state.workers / 2); // Yarısı işten çıkar
+            log("Paranız yetmedi, işçilerin yarısı istifa etti!", "bad");
+        }
+
+        // 5. Rastgele Olaylar
+        const eventRoll = Math.random();
+        if (eventRoll < 0.1) {
+            log("Zeytin sineği istilası! Kalite düştü.", "bad");
+            state.quality -= 15;
+        } else if (eventRoll > 0.9) {
+            log("Bölgenizde bir yemek yarışması düzenlendi, talepler arttı!", "good");
+            state.marketPrice += 20;
+        }
+
+        log(`Ay sonu: Hava ${state.weather}, Piyasa ${state.marketPrice} TL.`);
+        updateUI();
+    }
+
+    function checkWinCondition() {
+        if (state.money >= 1000000 && state.brandScore >= 100) {
+            alert("TEBRİKLER! Zeytinyağı İmparatoru oldunuz! Oyunu kazandınız.");
+            state.money = 1000000; // Reset prevent
+        }
+    }
+
+    // Başlangıç
+    updateUI();
+
+</script>
+
+</body>
+</html>
